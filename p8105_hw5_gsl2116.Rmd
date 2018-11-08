@@ -1,0 +1,29 @@
+---
+title: "P8105 Homework 5"
+author: "Grace Liu"
+date: "11/8/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(purrr)
+```
+
+## Problem 1
+
+```{r}
+files = 
+  list.files("./data", pattern = "*.csv", full.names = T)
+
+
+data = data_frame(filename = files) %>%
+  mutate(file_contents = map(filename, ~read_csv(file.path(".", .)))) %>% 
+  unnest()
+```
+df = files %>%  
+  map(~ read_csv(file.path(".", .))) %>% 
+  reduce(rbind)
+  
