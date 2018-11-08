@@ -18,10 +18,20 @@ library(purrr)
 files = 
   list.files("./data", pattern = "*.csv", full.names = T)
 
-
 data = data_frame(filename = files) %>%
   mutate(file_contents = map(filename, ~read_csv(file.path(".", .)))) %>% 
   unnest()
+
+for (i in 1:20) {
+  if (i <11) {
+   data[[i]] = data[[i]] %>% 
+     mutate(control = 1, study_id = i)
+   }
+  if (i >10) {
+    data[[i]] = data[[i]] %>% 
+      mutate(control = 0, study_id = i)
+    }
+  }
 ```
 df = files %>%  
   map(~ read_csv(file.path(".", .))) %>% 
