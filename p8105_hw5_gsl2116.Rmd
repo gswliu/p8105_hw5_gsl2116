@@ -15,21 +15,20 @@ library(purrr)
 ## Problem 1
 
 ```{r}
-files = 
-  list.files("./data", pattern = "*.csv", full.names = T)
+files = list.files("./data", pattern = "*.csv", full.names = TRUE)
 
-data = data_frame(filename = files) %>%
-  mutate(file_contents = map(filename, ~read_csv(file.path(".", .)))) %>% 
-  unnest()
+participant_data = files %>% 
+  map(~read_csv(file.path(".", .))) %>% 
+  reduce(rbind)
 
 for (i in 1:20) {
   if (i <11) {
-   data[[i]] = data[[i]] %>% 
-     mutate(control = 1, study_id = i)
+   participant_data[[i]] = participant_data[[i]] %>% 
+     mutate_at(arm = "Control", study_id = i)
    }
   if (i >10) {
-    data[[i]] = data[[i]] %>% 
-      mutate(control = 0, study_id = i)
+    participant_data[[i]] = participant_data[[i]] %>% 
+      mutate_at(arm = "Experiment", study_id = i)
     }
   }
 ```
