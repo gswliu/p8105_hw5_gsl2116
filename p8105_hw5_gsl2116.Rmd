@@ -17,8 +17,7 @@ library(purrr)
 ```{r}
 dataframe = 
   list.files("./data", pattern = "*.csv", full.names = TRUE) %>% 
-  map(read_csv) %>% 
-  t()
+  map(read_csv)
 
 for (i in 1:20) {
   if (i <11) {
@@ -34,8 +33,10 @@ for (i in 1:20) {
 participant_data =
   dataframe %>% 
   reduce(rbind) %>% 
+  gather(key = week, value = observation, week_1:week_8) %>% 
+  separate(week, into = c("remove", "week"), sep = "_") %>% 
   janitor::clean_names() %>% 
-  select(arm, study_id, everything())
+  select(arm, study_id, week, observation)
 ```
 
 ```{r}
