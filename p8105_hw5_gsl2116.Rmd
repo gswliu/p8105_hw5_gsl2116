@@ -12,6 +12,8 @@ library(dplyr)
 library(purrr)
 library(skimr)
 library(knitr)
+
+theme_set(theme_minimal())
 ```
 
 ## Problem 1 
@@ -46,7 +48,6 @@ participant_data %>%
   group_by(arm, study_id) %>% 
   ggplot(aes(x = week, y = observation, type = study_id, color = arm)) + 
     geom_line() +
-  theme_minimal() +
     theme(legend.position = "bottom") +
     labs(x = "Week", y = "Observations", 
          title = "Observations for each subject, by week and study arm")
@@ -62,6 +63,7 @@ homicides =
   transform(reported_date = as.Date(as.character(reported_date), "%Y%m%d"), 
             victim_age = as.numeric(victim_age)) %>% 
   select(uid, reported_date, city_state, everything()) %>% 
+  select(-city, -state) %>% 
   janitor::clean_names()
 
 homicides_summary =
@@ -118,10 +120,23 @@ homicides_summary %>%
   knitr::kable(digits = 4)
 ```
 
+```{r prop.test all cities, include=FALSE}
+unsolved_est = 
+  nest(homicides_summary, total_homicides:unsolved) %>% 
+  mutate(prop_unsolved = map(data, prop_unsolved)) %>% 
+  unnest() %>% 
+  select(-total_homicides, -unsolved)
+```
 
-<!-- For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe. -->
+The figure below depicts the stimated proportion, and confidence intervals, of homicides that remain unsolved in each city.  
 
-<!-- Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city. -->
-
-<!-- Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides. -->
-
+```{r unsolved proportion graph, echo=FALSE, fig.align='center'}
+unsolved_est %>% 
+  ggplot(aes(x = reorder(city_state, -estimate), y = estimate)) +
+    geom_point(color = "cornflowerblue", size = 1) +
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high), color = "cornflowerblue", alpha = 0.5) +
+    labs(x = "City", y = "Proportion", 
+         title = "Proportion of homicides unsolved, by city",
+         subtitle = "(Estimated proportions with confidence intervals)") +
+    theme(axis.text.x = element_text(angle = 90, size = 7.5))
+```
