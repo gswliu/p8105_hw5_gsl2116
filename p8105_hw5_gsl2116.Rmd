@@ -80,28 +80,43 @@ homicides = subset(homicides, city_state != "Tulsa, AL")
 homicides_summary = subset(homicides_summary, city_state != "Tulsa, AL")
 ```
 
-This dataset contains details on `r format(nrow(homicides), big.mark=",", scientific=FALSE)` homicides occurring in `r nrow(homicides_summary)` major US cities between `r min(homicides$reported_date)` and `r max(homicides$reported_date)`. 
+This dataset contains details on `r format(nrow(homicides), big.mark=",")` homicides occurring in `r nrow(homicides_summary)` major US cities between `r min(homicides$reported_date)` and `r max(homicides$reported_date)`. 
 
-The city with the highest number of total homicides was `r homicides_summary$city_state[match(max(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r format(max(homicides_summary$total_homicides), big.mark=",", scientific=FALSE)` homicides over the decade. The city with the lowest number of total homicides was `r homicides_summary$city_state[match(min(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, with `r min(homicides_summary$total_homicides)` cases. On an absolute scale, `r homicides_summary$city_state[match(max(homicides_summary$unsolved), homicides_summary$unsolved)]` was also the city with the most unsolved homicides and `r homicides_summary$city_state[match(min(homicides_summary$unsolved), homicides_summary$unsolved)]` had the least number of unsolved homicides. In terms of cities with the highest and lowest proportion of total homicides that remain unsolved, `r round(max(homicides_summary$unsolved/homicides_summary$total_homicides)*100, digits=2)`% of
+The city with the highest number of total homicides was `r homicides_summary$city_state[match(max(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r format(max(homicides_summary$total_homicides), big.mark=",")` homicides over the decade. The city with the lowest number of total homicides was `r homicides_summary$city_state[match(min(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, with `r min(homicides_summary$total_homicides)` cases. On an absolute scale, `r homicides_summary$city_state[match(max(homicides_summary$unsolved), homicides_summary$unsolved)]` was also the city with the most unsolved homicides and `r homicides_summary$city_state[match(min(homicides_summary$unsolved), homicides_summary$unsolved)]` had the least number of unsolved homicides. In terms of cities with the highest and lowest proportion of total homicides that remain unsolved, `r round(max(homicides_summary$unsolved/homicides_summary$total_homicides)*100, digits=2)`% of
 `r homicides_summary$city_state[match(max(homicides_summary$unsolved/homicides_summary$total_homicides), homicides_summary$unsolved/homicides_summary$total_homicides)]`'s cases are still unsolved, compared to `r round(min(homicides_summary$unsolved/homicides_summary$total_homicides)*100, digits=2)`% of
 `r homicides_summary$city_state[match(min(homicides_summary$unsolved/homicides_summary$total_homicides), homicides_summary$unsolved/homicides_summary$total_homicides)]`'s cases.
 
-In addition to location and report date, this dataset includes information on the race, age, and sex of each victim. Of the `r format(nrow(homicides), big.mark=",", scientific=FALSE)` victims, `r format(nrow(subset(homicides, victim_sex == "Female")), big.mark=",", scientific=FALSE)` (`r round(nrow(subset(homicides, victim_sex == "Female"))/nrow(homicides)*100, digits = 2)`%) were female and `r format(nrow(subset(homicides, victim_sex == "Male")), big.mark=",", scientific=FALSE)` (`r round(nrow(subset(homicides, victim_sex == "Male"))/nrow(homicides)*100, digits = 2)`%) were male. The average age of all victims was `r round(mean(homicides$victim_age, na.rm = TRUE), digits=2)`, with the oldest and youngest victims being `r max(homicides$victim_age, na.rm = TRUE)` and `r min(homicides$victim_age, na.rm = TRUE)` years old, respectively. A further breakdown of victims by race, age, and sex, is included below:
+In addition to location and report date, this dataset includes information on the race, age, and sex of each victim. Of the `r format(nrow(homicides), big.mark=",")` victims, `r format(nrow(subset(homicides, victim_sex == "Female")), big.mark=",")` (`r round(nrow(subset(homicides, victim_sex == "Female"))/nrow(homicides)*100, digits = 2)`%) were female and `r format(nrow(subset(homicides, victim_sex == "Male")), big.mark=",")` (`r round(nrow(subset(homicides, victim_sex == "Male"))/nrow(homicides)*100, digits = 2)`%) were male. The average age of all victims was `r round(mean(homicides$victim_age, na.rm = TRUE), digits=2)`, with the oldest and youngest victims being `r max(homicides$victim_age, na.rm = TRUE)` and `r min(homicides$victim_age, na.rm = TRUE)` years old, respectively. A further breakdown of victims by race, age, and sex, is included below:
 
 ```{r victim descriptions, echo=FALSE}
-kable(
-  group_by(homicides, victim_race) %>%
+homicides %>% 
+  group_by(victim_race) %>%
   summarise(
-    total = format(n(), big.mark=",", scientific=FALSE),
-    average_age = round(mean(victim_age, na.rm = TRUE), digits = 2),
-    male = format(sum(victim_sex == "Male", na.rm = TRUE), big.mark=",", scientific=FALSE),
-    female = format(sum(victim_sex == "Female", na.rm = TRUE), big.mark=",", scientific=FALSE),
-    sex_unknown = format(sum(victim_sex == "Unknown", na.rm = TRUE), big.mark=",", scientific=FALSE)
-  ))
+    total = n(),
+    average_age = mean(victim_age, na.rm = TRUE),
+    male = sum(victim_sex == "Male", na.rm = TRUE),
+    female = sum(victim_sex == "Female", na.rm = TRUE),
+    sex_unknown = sum(victim_sex == "Unknown", na.rm = TRUE)
+  ) %>% 
+  knitr::kable(digits = 2, format.args = list(big.mark=","))
 ```
 
+```{r prop.test function, include=FALSE}
+prop_unsolved = 
+  function(homicides_summary) {
+    prop.test(homicides_summary$unsolved, homicides_summary$total_homicides, conf.level = 0.95) %>% 
+    broom::tidy() %>% 
+    select(estimate, conf.low, conf.high)
+  }
+```
 
-
+The table below shows the estimated proportion, and confidence intervals, of homicides within Baltimore, MD, that remain unsolved. An estimated `r round((homicides_summary %>% filter(city_state == "Baltimore, MD") %>% prop_unsolved() %>% select(estimate))*100, digits = 2)`% of homicides are unsolved.
+```{r baltimore prop_unsolved, echo=FALSE}
+homicides_summary %>% 
+  filter(city_state == "Baltimore, MD") %>% 
+  prop_unsolved() %>% 
+  knitr::kable(digits = 4)
+```
 
 
 <!-- For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe. -->
