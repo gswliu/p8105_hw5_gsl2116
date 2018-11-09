@@ -12,8 +12,7 @@ library(dplyr)
 library(purrr)
 ```
 
-## Problem 1
-
+## Problem 1 
 ```{r participant data, include=FALSE}
 dataframe = 
   list.files("./data", pattern = "*.csv", full.names = TRUE) %>% 
@@ -26,7 +25,7 @@ for (i in 1:20) {
    }
   if (i >10) {
     dataframe[[i]] = dataframe[[i]] %>% 
-      mutate(arm = "Experiment", study_id = i-10)
+      mutate(arm = "Experimental", study_id = i-10)
     }
 }
 
@@ -40,7 +39,7 @@ participant_data =
   select(arm, study_id, week, observation)
 ```
 
-```{r study graph}
+```{r study line graph, fig.align='center'}
 participant_data %>% 
   group_by(arm, study_id) %>% 
   ggplot(aes(x = week, y = observation, type = study_id, color = arm)) + 
@@ -48,6 +47,13 @@ participant_data %>%
   theme_minimal() +
     theme(legend.position = "bottom") +
     labs(x = "Week", y = "Observations", 
-         title = "Observations per subject, by week")
+         title = "Observations for each subject, by week and study arm")
+```
+
+The figure above details the observations of 20 study participants over eight weeks. Half the participants were assigned to the control arm, and the other half were assigned to the experimental arm. Early in the study, there was not much difference between the two study arms. However, as the weeks passed, the observations for all individuals in the experimental arm increased, even as no appreciable change was seen in participants in the control arm.  
+
+## Problem 2
+```{r}
+library(data-homicides)
 ```
 
