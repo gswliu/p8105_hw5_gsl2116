@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
 library(purrr)
+library(skimr)
+library(knitr)
 ```
 
 ## Problem 1 
@@ -39,7 +41,7 @@ participant_data =
   select(arm, study_id, week, observation)
 ```
 
-```{r study line graph, fig.align='center'}
+```{r study line graph, fig.align='center', echo=FALSE}
 participant_data %>% 
   group_by(arm, study_id) %>% 
   ggplot(aes(x = week, y = observation, type = study_id, color = arm)) + 
@@ -57,7 +59,8 @@ The figure above details the observations of 20 study participants over eight we
 homicides = 
   read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
   mutate(city_state = paste(city, state, sep = ", ")) %>% 
-  transform(reported_date = as.Date(as.character(reported_date), "%Y%m%d")) %>% 
+  transform(reported_date = as.Date(as.character(reported_date), "%Y%m%d"), 
+            victim_age = as.numeric(victim_age)) %>% 
   select(uid, reported_date, city_state, everything()) %>% 
   janitor::clean_names()
 
@@ -77,17 +80,33 @@ homicides = subset(homicides, city_state != "Tulsa, AL")
 homicides_summary = subset(homicides_summary, city_state != "Tulsa, AL")
 ```
 
-This dataset contains details on `r format(nrow(homicides), big.mark=",", scientific=FALSE)` homicides occurring across `r nrow(homicides_summary)` major US cities between `r min(homicides$reported_date)` and `r max(homicides$reported_date)`. 
+This dataset contains details on `r format(nrow(homicides), big.mark=",", scientific=FALSE)` homicides occurring in `r nrow(homicides_summary)` major US cities between `r min(homicides$reported_date)` and `r max(homicides$reported_date)`. 
 
-The city with the highest number of total homicides was `r homicides_summary$city_state[match(max(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r max(homicides_summary$total_homicides)` homicides over the decade. The city with the lowest number of total homicides was `r homicides_summary$city_state[match(min(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r min(homicides_summary$total_homicides)` homicides over the decade. 
+The city with the highest number of total homicides was `r homicides_summary$city_state[match(max(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r format(max(homicides_summary$total_homicides), big.mark=",", scientific=FALSE)` homicides over the decade. The city with the lowest number of total homicides was `r homicides_summary$city_state[match(min(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, with `r min(homicides_summary$total_homicides)` cases. On an absolute scale, `r homicides_summary$city_state[match(max(homicides_summary$unsolved), homicides_summary$unsolved)]` was also the city with the most unsolved homicides and `r homicides_summary$city_state[match(min(homicides_summary$unsolved), homicides_summary$unsolved)]` had the least number of unsolved homicides. In terms of cities with the highest and lowest proportion of total homicides that remain unsolved, `r round(max(homicides_summary$unsolved/homicides_summary$total_homicides)*100, digits=2)`% of
+`r homicides_summary$city_state[match(max(homicides_summary$unsolved/homicides_summary$total_homicides), homicides_summary$unsolved/homicides_summary$total_homicides)]`'s cases are still unsolved, compared to `r round(min(homicides_summary$unsolved/homicides_summary$total_homicides)*100, digits=2)`% of
+`r homicides_summary$city_state[match(min(homicides_summary$unsolved/homicides_summary$total_homicides), homicides_summary$unsolved/homicides_summary$total_homicides)]`'s cases.
+
+In addition to location and report date, this dataset includes information on the race, age, and sex of each victim. Of the `r format(nrow(homicides), big.mark=",", scientific=FALSE)` victims, `r format(nrow(subset(homicides, victim_sex == "Female")), big.mark=",", scientific=FALSE)` (`r round(nrow(subset(homicides, victim_sex == "Female"))/nrow(homicides)*100, digits = 2)`%) were female and `r format(nrow(subset(homicides, victim_sex == "Male")), big.mark=",", scientific=FALSE)` (`r round(nrow(subset(homicides, victim_sex == "Male"))/nrow(homicides)*100, digits = 2)`%) were male. The average age of all victims was `r round(mean(homicides$victim_age, na.rm = TRUE), digits=2)`, with the oldest and youngest victims being `r max(homicides$victim_age, na.rm = TRUE)` and `r min(homicides$victim_age, na.rm = TRUE)` years old, respectively. A further breakdown of victims by race, age, and sex, is included below:
+
+```{r victim descriptions, echo=FALSE}
+kable(
+  group_by(homicides, victim_race) %>%
+  summarise(
+    total = format(n(), big.mark=",", scientific=FALSE),
+    average_age = round(mean(victim_age, na.rm = TRUE), digits = 2),
+    male = format(sum(victim_sex == "Male", na.rm = TRUE), big.mark=",", scientific=FALSE),
+    female = format(sum(victim_sex == "Female", na.rm = TRUE), big.mark=",", scientific=FALSE),
+    sex_unknown = format(sum(victim_sex == "Unknown", na.rm = TRUE), big.mark=",", scientific=FALSE)
+  ))
+```
 
 
 
 
 
-For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+<!-- For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe. -->
 
-Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+<!-- Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city. -->
 
-Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
+<!-- Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides. -->
 
