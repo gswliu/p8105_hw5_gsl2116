@@ -53,10 +53,12 @@ participant_data %>%
 The figure above details the observations of 20 study participants over eight weeks. Half the participants were assigned to the control arm, and the other half were assigned to the experimental arm. Early in the study, there was not much difference between the two study arms. However, as the weeks passed, the observations for all individuals in the experimental arm increased, even as no appreciable change was seen in participants in the control arm.  
 
 ## Problem 2
-```{r}
+```{r homicide data, include=FALSE}
 homicides = 
   read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
   mutate(city_state = paste(city, state, sep = ", ")) %>% 
+  transform(reported_date = as.Date(as.character(reported_date), "%Y%m%d")) %>% 
+  select(uid, reported_date, city_state, everything()) %>% 
   janitor::clean_names()
 
 homicides_summary =
@@ -68,5 +70,24 @@ homicides_summary =
             ) %>% 
   mutate(unsolved = unsolved_a + unsolved_b) %>% 
   select(-unsolved_a, -unsolved_b)
+
+#One observation has an invalid location (Tulsa, AL). Since it can't be determined if this should be "Tulsa, OK" or "Birmingham, AL", I am dropping the observation from the datasets.
+
+homicides = subset(homicides, city_state != "Tulsa, AL")
+homicides_summary = subset(homicides_summary, city_state != "Tulsa, AL")
 ```
+
+This dataset contains details on `r format(nrow(homicides), big.mark=",", scientific=FALSE)` homicides occurring across `r nrow(homicides_summary)` major US cities between `r min(homicides$reported_date)` and `r max(homicides$reported_date)`. 
+
+The city with the highest number of total homicides was `r homicides_summary$city_state[match(max(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r max(homicides_summary$total_homicides)` homicides over the decade. The city with the lowest number of total homicides was `r homicides_summary$city_state[match(min(homicides_summary$total_homicides), homicides_summary$total_homicides)]`, where there were a total of `r min(homicides_summary$total_homicides)` homicides over the decade. 
+
+
+
+
+
+For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+
+Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
 
