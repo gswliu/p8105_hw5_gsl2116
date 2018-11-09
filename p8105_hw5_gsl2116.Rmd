@@ -14,7 +14,7 @@ library(purrr)
 
 ## Problem 1
 
-```{r}
+```{r participant data, include=FALSE}
 dataframe = 
   list.files("./data", pattern = "*.csv", full.names = TRUE) %>% 
   map(read_csv)
@@ -35,20 +35,19 @@ participant_data =
   reduce(rbind) %>% 
   gather(key = week, value = observation, week_1:week_8) %>% 
   separate(week, into = c("remove", "week"), sep = "_") %>% 
+  mutate(week = as.numeric(week), study_id = as.character(study_id)) %>% 
   janitor::clean_names() %>% 
   select(arm, study_id, week, observation)
 ```
 
-```{r}
+```{r study graph}
 participant_data %>% 
-  ggplot(mapping = aes(x = week, y = weekly_total)) + 
-    scale_y_continuous(labels = scales::comma) +
-    geom_line(aes(color = "Weekly activity count totals")) +
-        labs(x = "Week", y = "Total activity counts", 
-         title = "Total activity counts, by week",
-         subtitle = "(with locally-weighted smooth curve)",
-         caption = "Figure 2") +
-  scale_color_manual(name = "", values = c("Weekly activity count totals" = "lightsteelblue")) +
-    theme(legend.position = "bottom")
+  group_by(arm, study_id) %>% 
+  ggplot(aes(x = week, y = observation, type = study_id, color = arm)) + 
+    geom_line() +
+  theme_minimal() +
+    theme(legend.position = "bottom") +
+    labs(x = "Week", y = "Observations", 
+         title = "Observations per subject, by week")
 ```
 
