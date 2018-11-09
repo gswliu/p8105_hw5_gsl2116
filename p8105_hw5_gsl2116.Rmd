@@ -63,6 +63,10 @@ homicides_summary =
   homicides %>% 
   group_by(city_state) %>% 
   summarise(total_homicides = n(),
-            unsolved = sum(disposition = c("Closed without arrest", "Open/No arrest")))
+            unsolved_a = sum(disposition == "Closed without arrest"),
+            unsolved_b = sum(disposition == "Open/No arrest")
+            ) %>% 
+  mutate(unsolved = unsolved_a + unsolved_b) %>% 
+  select(-unsolved_a, -unsolved_b)
 ```
 
